@@ -31,7 +31,7 @@ namespace picproc
 
             if (!cla.ParamsAreValid())
             {
-                cla.Usage();
+               cla.Usage();
                return;
             }
             

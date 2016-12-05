@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using Newtonsoft;
+using Newtonsoft.Json;
 
 namespace picproc
 {
@@ -10,6 +12,8 @@ namespace picproc
         public string DstFolder;
         public bool RenameBasedOnTime = true;
         public bool KeepOriginal = true;
+
+        public string IndexFileName = "index.json";
         
         public string FixedHeightDst = "Height";
         public List<int> FixedHeightSizes = new List<int>() { 50, 200 };
@@ -18,12 +22,21 @@ namespace picproc
         public List<int> FixedWidthSizes = new List<int>() { 50, 200 };
 
         public string SquareCropDst = "Square";
-        public List<int> SquareCropSizes = new List<int>() { 50, 200, 500 };
+        public List<int> SquareCropSizes = new List<int>() { 50, 200 };
     }
-    
+
+    public class PicInfo
+    {
+        public int H;
+        public int W;
+        public string Name;
+    }
+
+
     public class PicProc
     {
         public PicProcOptions Options { get; set; }
+        List<PicInfo> PicInfos = new List<PicInfo>();
 
         public PicProc(string dstFolder) : 
             this(new PicProcOptions
@@ -43,6 +56,8 @@ namespace picproc
             {
                 ProcessImage(inputFile);
             });
+
+            SaveIndexFile();
         }
 
         public void ProcessImage(string imgPath)
@@ -52,6 +67,7 @@ namespace picproc
 
             Console.WriteLine(imgPath + " -> " + bmpName);
 
+            AddToPicInfos(bmp.Width, bmp.Height, bmpName);
             SaveOriginal(bmp, bmpName);
             CreateFixedHeightImages(bmp, bmpName);
             CreateFixedWidthImages(bmp, bmpName);
@@ -68,6 +84,16 @@ namespace picproc
             {
                 return Path.GetFileName(imgPath);
             }
+        }
+
+        private void AddToPicInfos(int w, int h, string name)
+        {
+            PicInfos.Add(new PicInfo
+            {
+                W = w,
+                H = h,
+                Name = name
+            });
         }
 
         private void SaveOriginal(Bitmap original, string name)
@@ -150,6 +176,12 @@ namespace picproc
             }
 
             return ImageUtils.CropImage(bmp, x, y, size, size);
+        }
+
+        private void SaveIndexFile()
+        {
+            var json = JsonConvert.SerializeObject(PicInfos);
+            File.WriteAllText(Options.DstFolder + "/" + "index.json", json);
         }
     }
 }
